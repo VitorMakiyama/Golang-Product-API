@@ -4,48 +4,120 @@ import (
 	"api-produtos/internal/core/domain"
 	"api-produtos/internal/core/ports"
 	"api-produtos/internal/handlers/dtos"
+	"encoding/json"
 	"github.com/emicklei/go-restful/v3"
+	"go.uber.org/zap"
 	"net/http"
+	"strconv"
 )
 
-type handler struct {
+var log, _ = zap.NewProduction()
+
+const logMessage = "ProductHandler: "
+
+type Handler struct {
 	service ports.ProductService
 }
 
-func NewProductHandler(productService ports.ProductService) *handler {
-	return &handler{service: productService}
+func NewProductHandler(productService ports.ProductService) *Handler {
+	return &Handler{service: productService}
 }
 
-func (h *handler) CreateProduct(req *restful.Request, res *restful.Response) {
+func (h *Handler) CreateProduct(req *restful.Request, res *restful.Response) {
 	newProduct := new(domain.Product)
 	if err := req.ReadEntity(newProduct); err != nil {
-		res.WriteError(400, err)
+		_ = res.WriteError(http.StatusBadRequest, err)
 		return
 	}
 
 	ps, err := h.service.CreateProduct(*newProduct)
 	if err != nil {
-		res.WriteError(500, err)
+		_ = res.WriteError(http.StatusInternalServerError, err)
 		return
 	}
 
 	var createdDTOs dtos.ProductDTOList
 	createdDTOs.FromDomain(ps)
 
-	res.WriteHeader(http.StatusCreated)
-	res.WriteAsJson(createdDTOs)
+	logProduct, _ := json.Marshal(newProduct)
+	log.Info(logMessage + "created product: " + string(logProduct))
+	_ = res.WriteHeaderAndJson(http.StatusCreated, createdDTOs, restful.MIME_JSON)
 }
 
-func (h handler) GetAllProducts(req *restful.Request, res *restful.Response) {
+func (h *Handler) GetAllProducts(req *restful.Request, res *restful.Response) {
 	ps, err := h.service.GetAllProducts()
 	if err != nil {
-		res.WriteError(http.StatusInternalServerError, err)
+		_ = res.WriteError(http.StatusInternalServerError, err)
 		return
 	}
 
 	var list dtos.ProductDTOList
 	list.FromDomain(ps)
 
-	res.WriteHeader(http.StatusOK)
-	res.WriteAsJson(list)
+	logProducts, _ := json.Marshal(ps)
+	log.Info(logMessage + "gotten products: " + string(logProducts))
+	_ = res.WriteAsJson(list)
+}
+
+func (h *Handler) GetProduct(req *restful.Request, res *restful.Response) {
+	idStr := req.PathParameter("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		_ = res.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	p, err := h.service.GetProduct(id)
+	if err != nil {
+		_ = res.WriteError(http.StatusNotFound, err)
+		return
+	}
+
+	logProduct, _ := json.Marshal(p)
+	log.Info(logMessage + "gotten products: " + string(logProduct))
+	_ = res.WriteAsJson(p)
+}
+
+func (h *Handler) UpdateProduct(req *restful.Request, res *restful.Response) {
+	idStr := req.PathParameter("id")
+	id, err := strconv.Atoi(idStr)
+	update := new(dtos.ProductDTO)
+	err2 := req.ReadEntity(update)
+
+	if err != nil || err2 != nil {
+		_ = res.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	p, err := h.service.UpdateProduct(id, *update.ToDomain())
+	if err != nil {
+		_ = res.WriteError(http.StatusBadRequest, err)
+		return
+	}
+
+	response := new(dtos.ProductDTO)
+	response.FromDomain(*p)
+	logP, _ := json.Marshal(p)
+	log.Info(logMessage + "updated product id " + string(rune(id)) + ": " + string(logP))
+	_ = res.WriteAsJson(response)
+}
+
+func (h *Handler) DeleteProduct(req *restful.Request, res *restful.Response) {
+	idStr := req.PathParameter("id")
+	id, err := strconv.Atoi(idStr)
+
+	if err != nil {
+		_ = res.WriteError(http.StatusInternalServerError, err)
+		return
+	}
+
+	err = h.service.DeleteProduct(id)
+	if err != nil {
+		_ = res.WriteError(http.StatusBadRequest, err)
+		return
+	}
+
+	log.Info(logMessage + "deleted product id " + strconv.Itoa(id))
+	res.WriteHeader(http.StatusNoContent)
 }

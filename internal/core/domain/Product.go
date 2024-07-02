@@ -6,3 +6,15 @@ type Product struct {
 	Description string
 	Price       float32
 }
+
+func (p *Product) Update(update Product) {
+	if update.Name != "" {
+		p.Name = update.Name
+	}
+	if update.Description != "" {
+		p.Description = update.Description
+	}
+	if update.Price > 0 {
+		p.Price = update.Price
+	}
+}

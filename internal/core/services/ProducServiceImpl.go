@@ -3,9 +3,13 @@ package services
 import (
 	"api-produtos/internal/core/domain"
 	"api-produtos/internal/core/ports"
+	"encoding/json"
 	"errors"
-	"log"
+	"go.uber.org/zap"
+	"strconv"
 )
+
+var log, _ = zap.NewProduction()
 
 const errorMessage = "Service error: "
 
@@ -23,7 +27,8 @@ func NewProductService(repo ports.ProductRepository) ports.ProductService {
 func (s productServiceImpl) GetProduct(id int) (*domain.Product, error) {
 	p, err := s.repo.GetProduct(id)
 	if err != nil {
-		log.Fatalln(errorMessage+"repository error getting product id ", id, "\n", err)
+		errLog, _ := json.Marshal(err)
+		log.Error(errorMessage + "repository error getting product id " + strconv.Itoa(id) + "\n" + string(errLog))
 		return nil, err
 	}
 	return p, nil
@@ -32,7 +37,8 @@ func (s productServiceImpl) GetProduct(id int) (*domain.Product, error) {
 func (s productServiceImpl) GetAllProducts() ([]domain.Product, error) {
 	p, err := s.repo.GetAllProducts()
 	if err != nil {
-		log.Fatalln(errorMessage+"repository error getting all products\n", err)
+		errLog, _ := json.Marshal(err)
+		log.Error(errorMessage + "repository error getting all products\n" + string(errLog))
 		return nil, err
 	}
 	return p, nil
@@ -46,17 +52,19 @@ func (s productServiceImpl) CreateProduct(product domain.Product) ([]domain.Prod
 	p, err := s.repo.CreateProduct(product)
 
 	if err != nil {
-		log.Fatalln(errorMessage+" repository error creating product\n", err)
+		errLog, _ := json.Marshal(err)
+		log.Error(errorMessage + " repository error creating product\n" + string(errLog))
 		return nil, err
 	}
 	return p, nil
 }
 
-func (s productServiceImpl) UpdateProduct(id int) (*domain.Product, error) {
-	p, err := s.repo.UpdateProduct(id)
+func (s productServiceImpl) UpdateProduct(id int, update domain.Product) (*domain.Product, error) {
+	p, err := s.repo.UpdateProduct(id, update)
 
 	if err != nil {
-		log.Fatalln(errorMessage+" repository error updating product ", id, "\n", err)
+		errLog, _ := json.Marshal(err)
+		log.Error(errorMessage + " repository error updating product " + strconv.Itoa(id) + "\n" + string(errLog))
 		return nil, err
 	}
 
@@ -67,9 +75,10 @@ func (s productServiceImpl) DeleteProduct(id int) error {
 	err := s.repo.DeleteProduct(id)
 
 	if err != nil {
-		log.Fatalln(errorMessage+" repository error deleting product ", id, "\n", err)
+		errLog, _ := json.Marshal(err)
+		log.Error(errorMessage + " repository error deleting product " + strconv.Itoa(id) + "\n" + string(errLog))
 		return err
 	}
-	
+
 	return nil
 }
