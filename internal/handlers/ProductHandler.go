@@ -99,7 +99,7 @@ func (h *Handler) UpdateProduct(req *restful.Request, res *restful.Response) {
 	response := new(dtos.ProductDTO)
 	response.FromDomain(*p)
 	logP, _ := json.Marshal(p)
-	log.Info(logMessage + "updated product id " + string(rune(id)) + ": " + string(logP))
+	log.Info(logMessage + "updated product id " + strconv.Itoa(id) + ": " + string(logP))
 	_ = res.WriteAsJson(response)
 }
 

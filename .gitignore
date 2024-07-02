@@ -1,2 +1,6 @@
 # Intellij IDE
 .idea
+
+# Environment and variables
+.env
+docker-compose.yml

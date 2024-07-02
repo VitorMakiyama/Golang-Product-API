@@ -3,7 +3,6 @@ package services
 import (
 	"api-produtos/internal/core/domain"
 	"api-produtos/internal/core/ports"
-	"encoding/json"
 	"errors"
 	"go.uber.org/zap"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 var log, _ = zap.NewProduction()
 
 const errorMessage = "Service error: "
+const errorStr = " - error: "
 
 // when variable/function starts with lowercase it will be protected, Uppercase will be public
 type productServiceImpl struct {
@@ -27,8 +27,8 @@ func NewProductService(repo ports.ProductRepository) ports.ProductService {
 func (s productServiceImpl) GetProduct(id int) (*domain.Product, error) {
 	p, err := s.repo.GetProduct(id)
 	if err != nil {
-		errLog, _ := json.Marshal(err)
-		log.Error(errorMessage + "repository error getting product id " + strconv.Itoa(id) + "\n" + string(errLog))
+		errLog := err.Error()
+		log.Error(errorMessage + "repository error getting product id " + strconv.Itoa(id) + errorStr + errLog)
 		return nil, err
 	}
 	return p, nil
@@ -37,8 +37,8 @@ func (s productServiceImpl) GetProduct(id int) (*domain.Product, error) {
 func (s productServiceImpl) GetAllProducts() ([]domain.Product, error) {
 	p, err := s.repo.GetAllProducts()
 	if err != nil {
-		errLog, _ := json.Marshal(err)
-		log.Error(errorMessage + "repository error getting all products\n" + string(errLog))
+		errLog := err.Error()
+		log.Error(errorMessage + "repository error getting all products" + errorStr + errLog)
 		return nil, err
 	}
 	return p, nil
@@ -52,8 +52,8 @@ func (s productServiceImpl) CreateProduct(product domain.Product) ([]domain.Prod
 	p, err := s.repo.CreateProduct(product)
 
 	if err != nil {
-		errLog, _ := json.Marshal(err)
-		log.Error(errorMessage + " repository error creating product\n" + string(errLog))
+		errLog := err.Error()
+		log.Error(errorMessage + " repository error creating product" + errorStr + errLog)
 		return nil, err
 	}
 	return p, nil
@@ -63,8 +63,8 @@ func (s productServiceImpl) UpdateProduct(id int, update domain.Product) (*domai
 	p, err := s.repo.UpdateProduct(id, update)
 
 	if err != nil {
-		errLog, _ := json.Marshal(err)
-		log.Error(errorMessage + " repository error updating product " + strconv.Itoa(id) + "\n" + string(errLog))
+		errLog := err.Error()
+		log.Error(errorMessage + " repository error updating product " + strconv.Itoa(id) + errorStr + errLog)
 		return nil, err
 	}
 
@@ -75,8 +75,8 @@ func (s productServiceImpl) DeleteProduct(id int) error {
 	err := s.repo.DeleteProduct(id)
 
 	if err != nil {
-		errLog, _ := json.Marshal(err)
-		log.Error(errorMessage + " repository error deleting product " + strconv.Itoa(id) + "\n" + string(errLog))
+		errLog := err.Error()
+		log.Error(errorMessage + " repository error deleting product " + strconv.Itoa(id) + errorStr + errLog)
 		return err
 	}
 

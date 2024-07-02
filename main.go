@@ -20,7 +20,7 @@ func init() {
 }
 
 func main() {
-	var repository = repositories.NewNoDBRepository()
+	var repository = repositories.NewSQLRepository(repositories.StartMysqlDb()) //repositories.NewNoDBRepository()
 	var service = services.NewProductService(repository)
 
 	ws := new(restful.WebService)
