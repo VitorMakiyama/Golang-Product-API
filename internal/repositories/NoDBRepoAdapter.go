@@ -7,7 +7,7 @@ import (
 	"slices"
 )
 
-type noDBRepository struct {
+type noDBRepositoryAdapter struct {
 	products []domain.Product
 }
 
@@ -16,10 +16,10 @@ var globalId = 0
 const errorMessage = "NoDBRepository error: "
 
 func NewNoDBRepository() ports.ProductRepository {
-	return &noDBRepository{}
+	return &noDBRepositoryAdapter{}
 }
 
-func (db *noDBRepository) GetProduct(id int) (*domain.Product, error) {
+func (db *noDBRepositoryAdapter) GetProduct(id int) (*domain.Product, error) {
 	index := slices.IndexFunc(db.products, func(p domain.Product) bool { return p.Id == id })
 	if index == -1 {
 		return nil, errors.New(errorMessage + "id not found")
@@ -28,18 +28,18 @@ func (db *noDBRepository) GetProduct(id int) (*domain.Product, error) {
 	return &db.products[index], nil
 }
 
-func (db *noDBRepository) GetAllProducts() ([]domain.Product, error) {
+func (db *noDBRepositoryAdapter) GetAllProducts() ([]domain.Product, error) {
 	return db.products, nil
 }
 
-func (db *noDBRepository) CreateProduct(product domain.Product) ([]domain.Product, error) {
+func (db *noDBRepositoryAdapter) CreateProduct(product domain.Product) error {
 	product.Id = globalId
 	globalId++
 	db.products = append(db.products, product)
-	return db.products, nil
+	return nil
 }
 
-func (db *noDBRepository) UpdateProduct(id int, update domain.Product) (*domain.Product, error) {
+func (db *noDBRepositoryAdapter) UpdateProduct(id int, update domain.Product) (*domain.Product, error) {
 	index := slices.IndexFunc(db.products, func(p domain.Product) bool { return p.Id == id })
 	if index == -1 {
 		return nil, errors.New(errorMessage + "id not found")
@@ -49,7 +49,7 @@ func (db *noDBRepository) UpdateProduct(id int, update domain.Product) (*domain.
 	return &db.products[index], nil
 }
 
-func (db *noDBRepository) DeleteProduct(id int) error {
+func (db *noDBRepositoryAdapter) DeleteProduct(id int) error {
 	index := slices.IndexFunc(db.products, func(p domain.Product) bool { return p.Id == id })
 	if index == -1 {
 		return errors.New(errorMessage + "id not found")

@@ -13,15 +13,26 @@ import (
 
 const sqlErrorMessage = "MySQLRepo error: "
 
-type mySQLRepository struct {
+type mySQLProductRepositoryAdapter struct {
 	repo *sql.DB
 }
 
-func NewSQLRepository(db *sql.DB) ports.ProductRepository {
-	return &mySQLRepository{repo: db}
+func NewSQLProductRepository(db *sql.DB) ports.ProductRepository {
+	return &mySQLProductRepositoryAdapter{repo: db}
 }
 
-func (r *mySQLRepository) GetProduct(id int) (*domain.Product, error) {
+func (r *mySQLProductRepositoryAdapter) CreateProduct(product domain.Product) error {
+	query := "INSERT INTO products (name, description, price, type_id) VALUES (?, ?, ?, ?)"
+
+	_, err := r.repo.Exec(query, product.Name, product.Description, product.Price, product.Type.Id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *mySQLProductRepositoryAdapter) GetProduct(id int) (*domain.Product, error) {
 	query := fmt.Sprintf("SELECT * FROM products WHERE id = '%d'", id)
 	result := r.repo.QueryRow(query)
 	if result.Err() != nil {
@@ -29,13 +40,13 @@ func (r *mySQLRepository) GetProduct(id int) (*domain.Product, error) {
 	}
 
 	p := new(sqlProduct)
-	if err := result.Scan(&p.id, &p.name, &p.description, &p.price); err != nil {
+	if err := result.Scan(&p.id, &p.name, &p.description, &p.price, &p.typeId); err != nil {
 		return nil, err
 	}
 	return p.ToDomain(), nil
 }
 
-func (r *mySQLRepository) GetAllProducts() ([]domain.Product, error) {
+func (r *mySQLProductRepositoryAdapter) GetAllProducts() ([]domain.Product, error) {
 	var ps []domain.Product
 	query := "SELECT * FROM products"
 
@@ -50,7 +61,7 @@ func (r *mySQLRepository) GetAllProducts() ([]domain.Product, error) {
 	for result.Next() {
 		p := sqlProduct{}
 
-		if err := result.Scan(&p.id, &p.name, &p.description, &p.price); err != nil {
+		if err := result.Scan(&p.id, &p.name, &p.description, &p.price, &p.typeId); err != nil {
 			return nil, err
 		}
 
@@ -60,20 +71,7 @@ func (r *mySQLRepository) GetAllProducts() ([]domain.Product, error) {
 	return ps, nil
 }
 
-func (r *mySQLRepository) CreateProduct(product domain.Product) ([]domain.Product, error) {
-	query := "INSERT INTO products (name, description, price) VALUES (?, ?, ?)"
-
-	_, err := r.repo.Exec(query, product.Name, product.Description, product.Price)
-
-	if err != nil {
-		return nil, err
-	}
-
-	ps, _ := r.GetAllProducts()
-	return ps, nil
-}
-
-func (r *mySQLRepository) UpdateProduct(id int, update domain.Product) (*domain.Product, error) {
+func (r *mySQLProductRepositoryAdapter) UpdateProduct(id int, update domain.Product) (*domain.Product, error) {
 	p, _ := r.GetProduct(id)
 	p.Update(update)
 
@@ -88,7 +86,7 @@ func (r *mySQLRepository) UpdateProduct(id int, update domain.Product) (*domain.
 	return p, nil
 }
 
-func (r *mySQLRepository) DeleteProduct(id int) error {
+func (r *mySQLProductRepositoryAdapter) DeleteProduct(id int) error {
 	query := "DELETE FROM products WHERE id = ?"
 
 	res, err := r.repo.Exec(query, id)

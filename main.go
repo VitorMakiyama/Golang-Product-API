@@ -20,20 +20,36 @@ func init() {
 }
 
 func main() {
-	var repository = repositories.NewSQLRepository(repositories.StartMysqlDb()) //repositories.NewNoDBRepository()
-	var service = services.NewProductService(repository)
+	db := repositories.StartMysqlDb()
+	var productRepository = repositories.NewSQLProductRepository(db) //repositories.NewNoDBRepository()
+	var productTypeRepository = repositories.NewSQLTypeRepository(db)
+	var productService = services.NewProductService(productRepository, productTypeRepository)
+	var productTypeService = services.NewProductTypeService(productTypeRepository)
 
-	ws := new(restful.WebService)
-	ws = ws.Path("/products")
-	handler := handlers.NewProductHandler(service)
-	restful.Add(ws)
+	pws := new(restful.WebService)
+	pws = pws.Path("/products")
+	productHandler := handlers.NewProductHandler(productService)
 
-	// routes
-	ws.Route(ws.GET("").To(handler.GetAllProducts).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
-	ws.Route(ws.GET("/{id}").To(handler.GetProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
-	ws.Route(ws.POST("").To(handler.CreateProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
-	ws.Route(ws.PATCH("/{id}").To(handler.UpdateProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
-	ws.Route(ws.DELETE("/{id}").To(handler.DeleteProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	tws := new(restful.WebService)
+	tws = tws.Path("/product-types")
+	productTypeHandler := handlers.NewProductTypeHandler(productTypeService)
+
+	restful.Add(pws)
+	restful.Add(tws)
+
+	// Products routes
+	pws.Route(pws.GET("").To(productHandler.GetAllProducts).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	pws.Route(pws.GET("/{id}").To(productHandler.GetProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	pws.Route(pws.POST("").To(productHandler.CreateProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	pws.Route(pws.PATCH("/{id}").To(productHandler.UpdateProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	pws.Route(pws.DELETE("/{id}").To(productHandler.DeleteProduct).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+
+	// Product Types routes
+	tws.Route(tws.GET("").To(productTypeHandler.GetAllTypes).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	tws.Route(tws.GET("/{id}").To(productTypeHandler.GetType).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	tws.Route(tws.POST("").To(productTypeHandler.CreateType).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	tws.Route(tws.PATCH("/{id}").To(productTypeHandler.UpdateType).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
+	tws.Route(tws.DELETE("/{id}").To(productTypeHandler.DeleteType).Consumes(restful.MIME_JSON).Produces(restful.MIME_JSON))
 
 	logger.Info("Listening...")
 	log.Panicln(http.ListenAndServe(binding, nil))

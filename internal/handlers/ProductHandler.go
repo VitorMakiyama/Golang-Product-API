@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"api-produtos/internal/core/domain"
 	"api-produtos/internal/core/ports"
 	"api-produtos/internal/handlers/dtos"
 	"encoding/json"
@@ -13,7 +12,7 @@ import (
 
 var log, _ = zap.NewProduction()
 
-const logMessage = "ProductHandler: "
+const logMessage = "ProductHandler:"
 
 type Handler struct {
 	service ports.ProductService
@@ -24,13 +23,13 @@ func NewProductHandler(productService ports.ProductService) *Handler {
 }
 
 func (h *Handler) CreateProduct(req *restful.Request, res *restful.Response) {
-	newProduct := new(domain.Product)
+	newProduct := new(dtos.ProductDTO)
 	if err := req.ReadEntity(newProduct); err != nil {
 		_ = res.WriteError(http.StatusBadRequest, err)
 		return
 	}
 
-	ps, err := h.service.CreateProduct(*newProduct)
+	ps, err := h.service.CreateProduct(*newProduct.ToDomain())
 	if err != nil {
 		_ = res.WriteError(http.StatusInternalServerError, err)
 		return
@@ -40,7 +39,7 @@ func (h *Handler) CreateProduct(req *restful.Request, res *restful.Response) {
 	createdDTOs.FromDomain(ps)
 
 	logProduct, _ := json.Marshal(newProduct)
-	log.Info(logMessage + "created product: " + string(logProduct))
+	log.Info(logMessage + " created product: " + string(logProduct))
 	_ = res.WriteHeaderAndJson(http.StatusCreated, createdDTOs, restful.MIME_JSON)
 }
 
@@ -75,7 +74,7 @@ func (h *Handler) GetProduct(req *restful.Request, res *restful.Response) {
 	}
 
 	logProduct, _ := json.Marshal(p)
-	log.Info(logMessage + "gotten products: " + string(logProduct))
+	log.Info(logMessage + "got product: " + string(logProduct))
 	_ = res.WriteAsJson(p)
 }
 
@@ -84,9 +83,11 @@ func (h *Handler) UpdateProduct(req *restful.Request, res *restful.Response) {
 	id, err := strconv.Atoi(idStr)
 	update := new(dtos.ProductDTO)
 	err2 := req.ReadEntity(update)
-
-	if err != nil || err2 != nil {
+	if err != nil {
 		_ = res.WriteError(http.StatusInternalServerError, err)
+		return
+	} else if err2 != nil {
+		_ = res.WriteError(http.StatusInternalServerError, err2)
 		return
 	}
 

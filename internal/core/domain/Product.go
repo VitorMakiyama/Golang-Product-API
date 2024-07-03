@@ -5,6 +5,7 @@ type Product struct {
 	Name        string
 	Description string
 	Price       float32
+	Type        ProductType
 }
 
 func (p *Product) Update(update Product) {
@@ -14,7 +15,10 @@ func (p *Product) Update(update Product) {
 	if update.Description != "" {
 		p.Description = update.Description
 	}
-	if update.Price > 0 {
+	if update.Price >= 0 {
 		p.Price = update.Price
+	}
+	if update.Type.Id < 0 {
+		p.Type = update.Type
 	}
 }
