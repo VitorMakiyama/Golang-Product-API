@@ -10,4 +10,5 @@ type ProductTypeRepository interface {
 	DeleteType(id int, active bool) error
 	CheckExistence(name string) bool
 	ValidateType(id int) bool
+	GetTypeByName(name string) (*domain.ProductType, error)
 }

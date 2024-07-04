@@ -28,7 +28,7 @@ func (db *noDBRepositoryAdapter) GetProduct(id int) (*domain.Product, error) {
 	return &db.products[index], nil
 }
 
-func (db *noDBRepositoryAdapter) GetAllProducts() ([]domain.Product, error) {
+func (db *noDBRepositoryAdapter) GetAllProducts(name string, pTypeId int, minPrice float32, maxPrice float32) ([]domain.Product, error) {
 	return db.products, nil
 }
 
@@ -58,4 +58,9 @@ func (db *noDBRepositoryAdapter) DeleteProduct(id int) error {
 	// this deletion method is called "re-slicing", quite expensive, but it's the way to go in Golang
 	db.products = append(db.products[:index], db.products[index+1:]...)
 	return nil
+}
+
+func (db *noDBRepositoryAdapter) CheckExistence(name string) bool {
+	//TODO implement me
+	panic("implement me")
 }

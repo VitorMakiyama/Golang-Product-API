@@ -9,18 +9,18 @@ type ProductDTO struct {
 	Name        string
 	Description string
 	Price       float32
-	Type        ProductTypeDTO
+	TypeId      int
+	TypeName    string
 }
 type ProductDTOList []ProductDTO
 
 func (dto *ProductDTO) FromDomain(p domain.Product) {
-	t := new(ProductTypeDTO)
-	t.FromDomain(p.Type)
 	dto.Id = p.Id
 	dto.Name = p.Name
 	dto.Description = p.Description
 	dto.Price = p.Price
-	dto.Type = *t
+	dto.TypeId = p.Type.Id
+	dto.TypeName = p.Type.Name
 }
 
 func (dtos *ProductDTOList) FromDomain(ps []domain.Product) {
@@ -32,10 +32,14 @@ func (dtos *ProductDTOList) FromDomain(ps []domain.Product) {
 }
 
 func (dto *ProductDTO) ToDomain() *domain.Product {
+	t := domain.ProductType{
+		Id:   dto.TypeId,
+		Name: dto.TypeName,
+	}
 	return &domain.Product{
 		Name:        dto.Name,
 		Description: dto.Description,
 		Price:       dto.Price,
-		Type:        *dto.Type.ToDomain(),
+		Type:        t,
 	}
 }

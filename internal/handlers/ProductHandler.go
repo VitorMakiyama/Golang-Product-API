@@ -4,10 +4,12 @@ import (
 	"api-produtos/internal/core/ports"
 	"api-produtos/internal/handlers/dtos"
 	"encoding/json"
+	"fmt"
 	"github.com/emicklei/go-restful/v3"
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 var log, _ = zap.NewProduction()
@@ -31,7 +33,11 @@ func (h *Handler) CreateProduct(req *restful.Request, res *restful.Response) {
 
 	ps, err := h.service.CreateProduct(*newProduct.ToDomain())
 	if err != nil {
-		_ = res.WriteError(http.StatusInternalServerError, err)
+		if strings.Contains(err.Error(), "repository") {
+			_ = res.WriteError(http.StatusInternalServerError, err)
+		} else {
+			_ = res.WriteError(http.StatusBadRequest, err)
+		}
 		return
 	}
 
@@ -44,9 +50,20 @@ func (h *Handler) CreateProduct(req *restful.Request, res *restful.Response) {
 }
 
 func (h *Handler) GetAllProducts(req *restful.Request, res *restful.Response) {
-	ps, err := h.service.GetAllProducts()
+	queryParams := []string{"name", "type", "minPrice", "maxPrice"}
+	var params []string
+	for _, q := range queryParams {
+		params = append(params, req.QueryParameter(q))
+	}
+	fmt.Println(params)
+
+	ps, err := h.service.GetAllProducts(params...)
 	if err != nil {
-		_ = res.WriteError(http.StatusInternalServerError, err)
+		if strings.Contains(err.Error(), "repository") {
+			_ = res.WriteError(http.StatusInternalServerError, err)
+		} else {
+			_ = res.WriteError(http.StatusBadRequest, err)
+		}
 		return
 	}
 

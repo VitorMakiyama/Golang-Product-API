@@ -101,15 +101,22 @@ func (r *mySQLTypeRepositoryAdapter) DeleteType(id int, active bool) error {
 
 func (r *mySQLTypeRepositoryAdapter) CheckExistence(name string) bool {
 	query := "SELECT * FROM product_types WHERE name = ?"
-
-	res, err := r.repo.Exec(query, name)
-	if err != nil {
+	res := r.repo.QueryRow(query, name)
+	t := new(sqlProductType)
+	if err := res.Scan(&t.id, &t.name, &t.active); err != nil {
 		return false
 	}
-	if count, _ := res.RowsAffected(); count == 1 {
-		return true
+	return true
+}
+
+func (r *mySQLTypeRepositoryAdapter) CheckIdExistence(id int) bool {
+	query := "SELECT * FROM product_types WHERE id = ?"
+	res := r.repo.QueryRow(query, id)
+	t := new(sqlProductType)
+	if err := res.Scan(&t.id, &t.name, &t.active); err != nil {
+		return false
 	}
-	return false
+	return true
 }
 
 func (r *mySQLTypeRepositoryAdapter) ValidateType(id int) bool {
@@ -122,11 +129,16 @@ func (r *mySQLTypeRepositoryAdapter) ValidateType(id int) bool {
 	return true
 }
 
-func (r *mySQLTypeRepositoryAdapter) CheckIdExistence(id int) bool {
-	query := "SELECT * FROM product_types WHERE id = ?"
-	res := r.repo.QueryRow(query, id)
-	if res.Err() != nil {
-		return false
+func (r *mySQLTypeRepositoryAdapter) GetTypeByName(name string) (*domain.ProductType, error) {
+	query := fmt.Sprintf("SELECT * FROM product_types WHERE name = '%s'", name)
+	result := r.repo.QueryRow(query)
+	if result.Err() != nil {
+		return nil, result.Err()
 	}
-	return true
+
+	t := new(sqlProductType)
+	if err := result.Scan(&t.id, &t.name, &t.active); err != nil {
+		return nil, err
+	}
+	return t.ToDomain(), nil
 }

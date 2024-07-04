@@ -46,10 +46,12 @@ func (r *mySQLProductRepositoryAdapter) GetProduct(id int) (*domain.Product, err
 	return p.ToDomain(), nil
 }
 
-func (r *mySQLProductRepositoryAdapter) GetAllProducts() ([]domain.Product, error) {
+func (r *mySQLProductRepositoryAdapter) GetAllProducts(name string, pTypeId int, minPrice float32, maxPrice float32) ([]domain.Product, error) {
 	var ps []domain.Product
-	query := "SELECT * FROM products"
-
+	queryParams := fmt.Sprintf("WHERE ('%s' = '' OR name='%s') "+
+		"AND (%d < 0 OR type_id = %d) AND (%f < 0.0 OR price >= %f) AND (%f < 0.0 OR price <= %f)", name, name, pTypeId, pTypeId, minPrice, minPrice, maxPrice, maxPrice)
+	query := fmt.Sprintf("SELECT * FROM products %s", queryParams)
+	fmt.Println(query)
 	result, err := r.repo.Query(query)
 	if err != nil {
 		return nil, err
@@ -100,6 +102,16 @@ func (r *mySQLProductRepositoryAdapter) DeleteProduct(id int) error {
 		return errors.New(sqlErrorMessage + "multiple rows affected")
 	}
 	return nil
+}
+
+func (r *mySQLProductRepositoryAdapter) CheckExistence(name string) bool {
+	query := "SELECT * FROM products WHERE name = ?"
+	res := r.repo.QueryRow(query, name)
+	p := new(sqlProduct)
+	if err := res.Scan(&p.id, &p.name, &p.description, &p.price, &p.typeId); err != nil {
+		return false
+	}
+	return true
 }
 
 func buildMysqlConnUrl() string {

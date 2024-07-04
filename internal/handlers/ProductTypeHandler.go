@@ -25,7 +25,7 @@ func (h *TypeHandler) CreateType(req *restful.Request, res *restful.Response) {
 		_ = res.WriteError(http.StatusBadRequest, err)
 		return
 	}
-	fmt.Println(newType)
+
 	ps, err := h.service.CreateType(*newType.ToDomain())
 	if err != nil {
 		_ = res.WriteError(http.StatusInternalServerError, err)
