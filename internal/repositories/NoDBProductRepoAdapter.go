@@ -29,6 +29,20 @@ func (db *noDBRepositoryAdapter) GetProduct(id int) (*domain.Product, error) {
 }
 
 func (db *noDBRepositoryAdapter) GetAllProducts(name string, pTypeId int, minPrice float32, maxPrice float32) ([]domain.Product, error) {
+	ps := db.products
+
+	if name != "" {
+		ps = filter(ps, func(p domain.Product) bool { return p.Name == name })
+	}
+	if pTypeId < 0 {
+		ps = filter(ps, func(p domain.Product) bool { return p.Type.Id == pTypeId })
+	}
+	if minPrice <= 0 {
+		ps = filter(ps, func(p domain.Product) bool { return p.Price >= minPrice })
+	}
+	if maxPrice < 0 {
+		ps = filter(ps, func(p domain.Product) bool { return p.Price <= maxPrice })
+	}
 	return db.products, nil
 }
 
@@ -63,4 +77,13 @@ func (db *noDBRepositoryAdapter) DeleteProduct(id int) error {
 func (db *noDBRepositoryAdapter) CheckExistence(name string) bool {
 	//TODO implement me
 	panic("implement me")
+}
+
+func filter[T any](ss []T, test func(T) bool) (ret []T) {
+	for _, s := range ss {
+		if test(s) {
+			ret = append(ret, s)
+		}
+	}
+	return
 }
